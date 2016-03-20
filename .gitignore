@@ -54,3 +54,7 @@ TabletApp/openCVLibrary310/build/
 /bin/
 
 /.settings
+
+*.classpath
+*.project
+*.settings/

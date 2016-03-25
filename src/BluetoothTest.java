@@ -1,6 +1,7 @@
 <<<<<<< 585dfc2503d349f05f72973be0f4d14d095edfcb
 =======
 
+<<<<<<< 1fe3b0d7b737135c5bf2bec21b62faa85c103c3e
 >>>>>>> communication working, swapped bricks
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -82,3 +83,5 @@ public class BluetoothTest {
 
 }
 >>>>>>> communication working, swapped bricks
+=======
+>>>>>>> bluetooth connection test

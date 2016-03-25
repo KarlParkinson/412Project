@@ -1,34 +1,17 @@
 package com.cmput.videotest;
 
-import android.app.IntentService;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.MediaMetadataRetriever;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.VideoView;
 
-import com.squareup.picasso.Picasso;
-
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -39,7 +22,10 @@ public class MainActivity extends AppCompatActivity {
     Button connectIpButton;
     Button connectEV3;
     EditText enterIpText;
-    boolean IPCONNECTED;
+    boolean ipconnected;
+    boolean btconnected;
+    BT_Comm btComm;
+    String macAddress1 = "00:16:53:44:9B:36";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +36,9 @@ public class MainActivity extends AppCompatActivity {
         connectEV3 = (Button) findViewById(R.id.connectEV3);
         enterIpText = (EditText) findViewById(R.id.enterIpAddress);
         enterIpText.setText("172.28.88.195:8080");
-        IPCONNECTED = false;
+        ipconnected = false;
+        btconnected = false;
+        btComm = new BT_Comm();
     }
 
     public void onStart(){
@@ -64,20 +52,31 @@ public class MainActivity extends AppCompatActivity {
         d.cancel(false);
     }
 
-    public void clickConnectEV3(View view){
-       Log.d("MainActivity", "Connect to EV3");
+    public void clickConnectEV3(View view) {
+        if(!btconnected) {
+            Log.d("MainActivity", "Connect to EV3");
+            btComm.enableBT();
+            boolean connected = btComm.connectToEV3(this.macAddress1);
+
+            if (connected) {
+                btconnected = true;
+                try {
+                    btComm.writeMessage((byte) 42);
+                } catch (InterruptedException e) {
+                    //e.printStackTrace();
+                    Log.d("MainActivity", "Did not sent byte");
+                }
+            }
+        }
+
     }
 
     public void clickConnectIpCamera(View view){
         String ip = enterIpText.getText().toString();
-        if(!IPCONNECTED){
+        if(!ipconnected){
             d.execute("http://"+ip+"/shot.jpg");
-            IPCONNECTED = true;
+            ipconnected = true;
         }
-    }
-
-    public void updateImageView(Bitmap bm){
-        this.ipCamera.setImageBitmap(bm);
     }
 
     private class DownloadImageTask extends AsyncTask<String, Bitmap, Bitmap> {

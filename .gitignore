@@ -24,6 +24,7 @@ hs_err_pid*
 # Files for the Dalvik VM
 *.dex
 
+
 # Generated files
 TabletApp/bin/
 TabletApp/gen/
@@ -46,3 +47,6 @@ TabletApp/.navigation/
 
 # Android Studio captures folder
 TabletApp/captures/
+
+#Android OpenCV module
+TabletApp/openCVLibrary310/build/

@@ -5,6 +5,7 @@ package com.cmput.videotest;
  * and http://stackoverflow.com/questions/4969053/bluetooth-connection-between-android-and-lego-mindstorm-nxt on March 24 2016
  *
  */
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -51,7 +52,7 @@ public class BT_Comm {
     }
 
     public  boolean connectToEV3(String macAdd){
-        BluetoothDevice ev3_1 = localAdapter.getRemoteDevice(macAdd);
+        BluetoothDevice ev3_1 = localAdapter.getRemoteDevice("00:16:53:44:9B:36");
         //try to connect to the ev3
         try {
             socket_ev3_1 = ev3_1.createRfcommSocketToServiceRecord(UUID
@@ -86,6 +87,38 @@ public class BT_Comm {
                 out.flush();
 
                 Thread.sleep(1000);
+
+
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }else{
+            //Error
+        }
+    }
+
+
+    public void writeData(int msg) throws InterruptedException{
+        BluetoothSocket connSock;
+
+        //Swith nxt socket
+        //if(nxt.equals("nxt2")){
+        //    connSock=socket_nxt2;
+        //}else
+        //if(nxt.equals("nxt1")){
+        connSock= socket_ev3_1;
+        //}else{
+        //    connSock=null;
+        //}
+
+        if(connSock!=null){
+            try {
+                DataOutputStream dout = new DataOutputStream(connSock.getOutputStream());
+                //OutputStreamWriter out=new OutputStreamWriter(connSock.getOutputStream());
+                dout.writeInt(msg);
+                dout.flush();
+                //Thread.sleep(40);
 
 
             } catch (IOException e) {

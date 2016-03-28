@@ -6,6 +6,7 @@ import lejos.hardware.Bluetooth;
 import lejos.remote.nxt.BTConnection;
 import lejos.remote.nxt.BTConnector;
 import lejos.remote.nxt.NXTConnection;
+import lejos.utility.Delay;
 
 public class BluetoothTest {
 	
@@ -21,11 +22,14 @@ public class BluetoothTest {
 	
 	public static void main(String[] args){
 		connect();
-		
+		int count = 0;
 		while(true){
 			try{
-				transmission = dataIn.readByte();
-				System.out.println("Read byte");
+				transmission = dataIn.readInt();
+				System.out.println("Read int: " + transmission);
+				if(transmission == -1){
+					Delay.msDelay(500);
+				}
 			}catch(IOException e){
 				System.out.println("Could not read bt connection");
 			}
@@ -37,7 +41,7 @@ public class BluetoothTest {
 	public static void connect()
 	 { 
 	    System.out.println("Listening");
-	    BTLink = (BTConnection) Bluetooth.getNXTCommConnector().waitForConnection(20000, NXTConnection.RAW);    
+	    BTLink = (BTConnection) Bluetooth.getNXTCommConnector().waitForConnection(8000, NXTConnection.RAW);    
 		dataOut = BTLink.openDataOutputStream();
 		dataIn = BTLink.openDataInputStream();
 	 }//End connect

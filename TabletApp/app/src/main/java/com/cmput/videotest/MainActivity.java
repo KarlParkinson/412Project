@@ -79,13 +79,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         btconnected = false;
         btComm = new BT_Comm();
         d = new DownloadImageTask((ImageView) findViewById(R.id.capturedimage));
-
-
     }
 
     public void onStart() {
         super.onStart();
-
     }
 
     public void onPause() {
@@ -93,6 +90,22 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         d.cancel(false);
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+        d.cancel(false);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_1_0, this, mLoaderCallback);
+    }
+
+    /**
+     * Button action to Connect to EV3 brick
+     * @param view
+     */
     public void clickConnectEV3(View view) {
         if (!btconnected) {
             Log.d("MainActivity", "Trying to connect to EV3");
@@ -110,14 +123,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
             }
         }
-
     }
 
+    /**
+     * Button action to connect to Ip camera
+     *
+     * @param view
+     */
     public void clickConnectIpCamera(View view) {
         String ip = enterIpText.getText().toString();
 
         if (!ipconnected) {
-
+            //Initialize opencv variables
             mDetector = new ColorBlobDetector();
             mSpectrum = new Mat();
             mBlobColorRgba = new Scalar(255);
@@ -130,13 +147,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
 
-    @Override
-    public void onStop() {
-        super.onStop();
-
-
-    }
-
+    /**
+     * Thread task for pulling images from ipCamera, and applying opencv object detection
+     */
     private class DownloadImageTask extends AsyncTask<String, Bitmap, Bitmap> {
         ImageView bmImage;
 
@@ -160,44 +173,50 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return mIcon11;
         }
 
+        //Allows UI changes
         protected void onProgressUpdate(Bitmap... result) {
             super.onProgressUpdate(result);
             Bitmap bm = result[0];
-            if (!mIsColorSelected) {
 
+            //If tracking color has not been selected then just display bm
+            if (!mIsColorSelected) {
                 bmImage.setImageBitmap(result[0]);
                 mRgba = new Mat(ipCamera.getHeight(), ipCamera.getWidth(), CvType.CV_8UC4);
                 Utils.bitmapToMat(result[0],mRgba);
-
             } else {
+                //convert bm from ipcamera to opencv Mat
                 mRgba = new Mat(ipCamera.getHeight(), ipCamera.getWidth(), CvType.CV_8UC4);
                 Utils.bitmapToMat(result[0], mRgba);
 
-
+                //Call blob detector process and get contours, and draw contours
                 mDetector.process(mRgba);
                 List<MatOfPoint> contours = mDetector.getContours();
                 Log.e(TAG, "Contours count: " + contours.size());
                 Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
 
+                //Display selected color on image top corner
                 Mat colorLabel = mRgba.submat(4, 68, 4, 68);
                 colorLabel.setTo(mBlobColorRgba);
-
                 Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
 
+                //if Bluetooth connected then get contour center and send to EV3
                 if(contours.size() > 0 && btconnected){
-
-
                     MatOfPoint2f cnt =new MatOfPoint2f(contours.get(0).toArray());
                     Point center = new Point();
                     float[] radius = {0};
                     Imgproc.minEnclosingCircle(cnt, center, radius);
 
+                    Log.d("Coords Goal x", String.valueOf((int) Math.round(center.x)));
+                    Log.d("Coords Goal y", String.valueOf((int) Math.round(center.y)));
+
+                    Log.d("Coords mRgba x", String.valueOf(mRgba.cols()/2));
+                    Log.d("Coords mRgba y", String.valueOf(mRgba.rows()/2));
 
                     sendCoordsToEV3((int)Math.round(center.x),(int)Math.round(center.y));
                 }
-
-
-                Imgproc.circle(mRgba, new Point(goalCoords[0], goalCoords[1]), 20, new Scalar(0, 255, 0), 1);
+                //Draw center target
+                Imgproc.circle(mRgba, new Point(mRgba.cols()/2, mRgba.rows()/2), 20, new Scalar(0, 255, 0), 1);
+                Imgproc.circle(mRgba, new Point(mRgba.cols()/2, mRgba.rows()/2), 2, new Scalar(0, 255, 0), 1);
                 Utils.matToBitmap(mRgba, bm);
                 ipCamera.setImageBitmap(bm);
             }
@@ -207,10 +226,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         protected void onPostExecute(Bitmap result) {
             bmImage.setImageBitmap(result);
-
         }
     }
-
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -220,7 +237,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     Log.i(TAG, "OpenCV loaded successfully");
                     //mOpenCvCameraView.enableView();
                     ipCamera.setOnTouchListener(MainActivity.this);
-
                 }
                 break;
                 default: {
@@ -231,16 +247,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     };
 
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_1_0, this, mLoaderCallback);
-    }
-
-    //retrieved from https://github.com/Itseez/opencv/blob/master/samples/android/color-blob-detection/src/org/opencv/samples/colorblobdetect/ColorBlobDetectionActivity.java
-    //on 2016-03-27
+    /**
+     * OnTouch Action for ImageView that displays ipCamera frames
+     *
+     * Used OpenCV Android SDK Samples:
+     * retrieved from https://github.com/Itseez/opencv/blob/master/samples/android/color-blob-detection/src/org/opencv/samples/colorblobdetect/ColorBlobDetectionActivity.java
+     * on 2016-03-27
+     *
+     * @param v
+     * @param event
+     * @return
+     */
     public boolean onTouch(View v, MotionEvent event) {
         int cols = mRgba.cols();
         int rows = mRgba.rows();
@@ -301,15 +318,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return new Scalar(pointMatRgba.get(0, 0));
     }
 
-
+    /**
+     * Sends image center and goal coodinates to connected device over Bluetooth
+     *
+     * @param goalX
+     * @param goalY
+     */
     public void sendCoordsToEV3(int goalX, int goalY){
 
-        int centerXOnImage=ipCamera.getWidth()/2;
-        int centerYOnImage=ipCamera.getHeight()/2;
-        int centerX=ipCamera.getLeft()+centerXOnImage;
-        int centerY=ipCamera.getTop()+centerYOnImage;
-
-        int[] message = {goalX,goalY,centerX,centerY,};
+        int[] message = {goalX,goalY,mRgba.cols()/2,mRgba.rows()/2};
         try {
             for(int i = 0; i < 4; i++){
                 btComm.writeData(message[i]);

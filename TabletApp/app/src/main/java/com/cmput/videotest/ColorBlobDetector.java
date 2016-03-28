@@ -12,6 +12,9 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 /**
+ * Color Blob detector
+ *
+ * Used OpenCV Android SDK Sample:
  * retrieved from https://github.com/Itseez/opencv/blob/master/samples/android/color-blob-detection/src/org/opencv/samples/colorblobdetect/ColorBlobDetector.java on 2016-03-27
  */
 public class ColorBlobDetector {

@@ -1,3 +1,4 @@
+<<<<<<< d71db2d1347f645d09943df92d0966b44690ab4e
 <<<<<<< 585dfc2503d349f05f72973be0f4d14d095edfcb
 =======
 
@@ -85,3 +86,5 @@ public class BluetoothTest {
 >>>>>>> communication working, swapped bricks
 =======
 >>>>>>> bluetooth connection test
+=======
+>>>>>>> bluetooth comm test on Ev3

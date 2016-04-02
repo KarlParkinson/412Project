@@ -1,6 +1,8 @@
 import java.net.MalformedURLException;
+
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -14,12 +16,15 @@ import lejos.remote.ev3.RMIRegulatedMotor;
 import lejos.remote.ev3.RemoteEV3;
 import lejos.utility.Delay;
 
+
+
 public class PanAndTiltServoing extends JPanel {
 	
 	public static TrackerReader tracker = new TrackerReader();;
 	RMIRegulatedMotor pan;
 	RMIRegulatedMotor tilt1;
 	RMIRegulatedMotor tilt2;
+	
 	
 	private final double h = 120;
 	private final double s = 180;
@@ -32,7 +37,9 @@ public class PanAndTiltServoing extends JPanel {
 	boolean ESC;
 	
 	//private final double k1;
-	private final double k2 = 0.1;
+	private final double k2 = 0.5;
+	
+	double radiansPerTick;
 	
 	public PanAndTiltServoing() {
 		try {
@@ -47,6 +54,10 @@ public class PanAndTiltServoing extends JPanel {
 			MouseListener l = new MyMouseListener();
 			addMouseListener(l);
 			setFocusable(true);
+			
+			double distancePerTick = (Math.PI*0.056)/360;
+			double ticksPerRotation = (2*Math.PI*0.05875)/ distancePerTick;
+			radiansPerTick = (2*Math.PI)/ ticksPerRotation;
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -102,7 +113,7 @@ public class PanAndTiltServoing extends JPanel {
 		
 	}
 	
-	public void calcVelocity() {
+	public double calcVelocity() {
 		System.out.println("phi is: " + phi);
 		System.out.println("psi is: " + psi);
 		double b = h / Math.tan(Math.toRadians(psi));
@@ -111,6 +122,14 @@ public class PanAndTiltServoing extends JPanel {
 		//double velocity = Math.sqrt(normESquared)*Math.cos(alpha)*k1;
 		double angularVelocity = k2*alpha;
 		System.out.println("Angular velocity is: " + angularVelocity);
+		return angularVelocity;
+	}
+	
+	private double calcTachoCount(double angularVelocity) {
+		double tachoCount = (2*angularVelocity) / radiansPerTick;
+		System.out.println("Tacho Count is: " + tachoCount);
+		return tachoCount;
+		
 	}
 	
 	public void closePorts(){
@@ -123,6 +142,19 @@ public class PanAndTiltServoing extends JPanel {
 			e.printStackTrace();
 			this.closePorts();
 		}
+	}
+	
+	public int encode(double count) {
+		int tachoCount = (int) Math.round(count);
+		int motor = (tachoCount >= 0) ? 0 : 1;
+		System.out.println((int) ((Math.abs(tachoCount)*10 + motor)*Math.signum(tachoCount)));
+		return (int) ((Math.abs(tachoCount)*10 + motor)*Math.signum(tachoCount));
+	}
+	
+	public void decode(int received) {
+		int motor = received % 10;
+		int tachoCount = (int) ((received - motor*Math.signum(motor)) / 10);
+		System.out.println(tachoCount);
 	}
 	
 	
@@ -234,17 +266,16 @@ public class PanAndTiltServoing extends JPanel {
 	public static void main(String[] args) {
 		tracker.start();
 		
+		BluetoothServer.connect();
 		PanAndTiltServoing p = new PanAndTiltServoing();
 		p.setInitialAngles();
 		Button.waitForAnyPress();
 		p.approxFeedForwardTerms();
-		//System.out.println(p.gammaForward);
-		//System.out.println(p.ettaForward);
-		//p.zerox();
-		//p.zeroy();
 		double errorx = tracker.targetx - tracker.x;
 		double errory = tracker.targety - tracker.y;
 		double normTrackerError;
+		double angularV;
+		double tachoCount;
 		
 		JFrame frame = new JFrame("Click here to escape");
 		frame.add(p);
@@ -256,26 +287,20 @@ public class PanAndTiltServoing extends JPanel {
 			errory = tracker.targety - tracker.y;
 			normTrackerError = Math.sqrt(Math.pow(errorx, 2) + Math.pow(errory, 2));
 			if (normTrackerError > 30) {
+				BluetoothServer.send(Integer.MAX_VALUE);
 				p.zerox();
 				p.zeroy();
-				p.calcVelocity();
+				angularV = p.calcVelocity();
+				tachoCount = p.calcTachoCount(angularV);
+				BluetoothServer.send((int) Math.round(tachoCount));
+			} else {
+				BluetoothServer.send(Integer.MIN_VALUE);
 			}
 		}
-		//Button.waitForAnyPress();
-		//p.tiltTo(-45);
-		//Button.waitForAnyPress();
-		//while(true) {
-		//	System.out.println(tracker.targetx - tracker.x);
-		//}
-		//p.zerox();
-		//System.out.println("Done x");
-		//Button.waitForAnyPress();
-		//Delay.msDelay(2000);
-		//p.zeroy();
-		//System.out.println("Done");
-		//Button.waitForAnyPress();
 		p.closePorts();
-		//System.out.println("Exiting");
+		BluetoothServer.disconnect();
 	}
+
+
 
 }

@@ -44,11 +44,24 @@ public class BluetoothServer {
 		System.out.println("\nClosed data streams");
 
 	}//End disconnect
+	
+	public static void send(int data) {
+		try {
+			System.out.println("Sending: " + data);
+			outData1.writeInt(data);
+			outData1.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 
+	
+	/*
 	public static void main(String[] args) {
 		connect();
-		Button.waitForAnyPress();
+		//Button.waitForAnyPress();
 		for (int i = 0; i < 100; i++) {
 			try {
 				outData1.writeInt(i);
@@ -61,5 +74,7 @@ public class BluetoothServer {
 		Delay.msDelay(10000);
 		disconnect();
 	}
+	*/
+	
 
 }

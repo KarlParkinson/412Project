@@ -52,3 +52,5 @@ TabletApp/captures/
 #Android OpenCV module
 TabletApp/openCVLibrary310/build/
 /bin/
+
+/.settings

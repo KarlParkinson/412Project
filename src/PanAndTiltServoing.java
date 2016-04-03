@@ -12,8 +12,11 @@ import java.awt.event.MouseListener;
 import java.lang.Math;
 
 import lejos.hardware.Button;
+import lejos.hardware.port.SensorPort;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.remote.ev3.RMIRegulatedMotor;
 import lejos.remote.ev3.RemoteEV3;
+import lejos.robotics.SampleProvider;
 import lejos.utility.Delay;
 
 
@@ -24,6 +27,10 @@ public class PanAndTiltServoing extends JPanel {
 	RMIRegulatedMotor pan;
 	RMIRegulatedMotor tilt1;
 	RMIRegulatedMotor tilt2;
+	EV3UltrasonicSensor dSensor;
+	SampleProvider sp;
+	float sample[] = {0};
+	double distanceThres = 0.07;
 	
 	
 	private final double h = 120;
@@ -50,6 +57,10 @@ public class PanAndTiltServoing extends JPanel {
 			pan.setSpeed(50);
 			tilt1.setSpeed(50);
 			tilt2.setSpeed(50);
+			dSensor = new EV3UltrasonicSensor(brick.getPort(SensorPort.S1.getName()));
+			sp = dSensor.getDistanceMode();
+			sample = new float[1];
+			
 			ESC = false;
 			MouseListener l = new MyMouseListener();
 			addMouseListener(l);
@@ -137,6 +148,7 @@ public class PanAndTiltServoing extends JPanel {
 			tilt1.close();
 			tilt2.close();
 			pan.close();
+			dSensor.close();
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -173,7 +185,12 @@ public class PanAndTiltServoing extends JPanel {
 		//tiltTo((int) psi);
 		//double ettaForward = etta2 - etta1;
 		errory = tracker.targety - tracker.y;
-		while (Math.abs(errory) > 1) {
+		while (Math.abs(errory) > 1 && !this.ESC) {
+			sp.fetchSample(sample,0);
+			if(sample[0] <= distanceThres){
+				break;
+			}
+			
 			double psiChange = -1*(ettaForward - kpsi*errory) % 360;
 			if (Math.abs(psiChange) > MAX_ANGLE) {
 				psiChange = MAX_ANGLE * Math.signum(psiChange);
@@ -200,7 +217,12 @@ public class PanAndTiltServoing extends JPanel {
 			//pan.rotateTo((int) phi);
 			//double gammaForward = gamma2 - gamma1;
 			double errorx = tracker.targetx - tracker.x;
-			while (Math.abs(errorx) > 1) {
+			while (Math.abs(errorx) > 1 && !this.ESC) {
+				sp.fetchSample(sample,0);
+				if(sample[0] <= distanceThres){
+					break;
+				}
+				
 				//phi += (gammaForward - kphi*errorx) % 360;
 				double phiChange = -1*(gammaForward - kphi*errorx) % 360;
 				if (Math.abs(phiChange) > MAX_ANGLE) {
@@ -215,6 +237,7 @@ public class PanAndTiltServoing extends JPanel {
 			}
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
+			closePorts();
 			e.printStackTrace();
 		} 
 	}
@@ -283,6 +306,12 @@ public class PanAndTiltServoing extends JPanel {
 		frame.setVisible(true);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		while (!p.ESC) {
+			p.sp.fetchSample(p.sample,0);
+			System.out.println("Sensor distance measure " + p.sample[0]);
+			if(p.sample[0] <= p.distanceThres){
+				break;
+			}
+			
 			errorx = tracker.targetx - tracker.x;
 			errory = tracker.targety - tracker.y;
 			normTrackerError = Math.sqrt(Math.pow(errorx, 2) + Math.pow(errory, 2));

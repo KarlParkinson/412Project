@@ -27,10 +27,11 @@ public class PanAndTiltServoing extends JPanel {
 	RMIRegulatedMotor pan;
 	RMIRegulatedMotor tilt1;
 	RMIRegulatedMotor tilt2;
+	RMIRegulatedMotor grabber;
 	EV3UltrasonicSensor dSensor;
 	SampleProvider sp;
 	float sample[] = {0};
-	double distanceThres = 0.07;
+	double distanceThres = 0.04;
 	
 	
 	private final double h = 120;
@@ -44,7 +45,7 @@ public class PanAndTiltServoing extends JPanel {
 	boolean ESC;
 	
 	//private final double k1;
-	private final double k2 = 0.5;
+	private final double k2 = 0.9;
 	
 	double radiansPerTick;
 	
@@ -54,10 +55,11 @@ public class PanAndTiltServoing extends JPanel {
 			pan = brick.createRegulatedMotor("B", 'L');
 			tilt1 = brick.createRegulatedMotor("C", 'L');
 			tilt2 = brick.createRegulatedMotor("D", 'L');
+			grabber = brick.createRegulatedMotor("A", 'M');
 			pan.setSpeed(50);
 			tilt1.setSpeed(50);
 			tilt2.setSpeed(50);
-			dSensor = new EV3UltrasonicSensor(brick.getPort(SensorPort.S1.getName()));
+			dSensor = new EV3UltrasonicSensor(brick.getPort(SensorPort.S2.getName()));
 			sp = dSensor.getDistanceMode();
 			sample = new float[1];
 			
@@ -149,6 +151,7 @@ public class PanAndTiltServoing extends JPanel {
 			tilt2.close();
 			pan.close();
 			dSensor.close();
+			grabber.close();
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -185,7 +188,7 @@ public class PanAndTiltServoing extends JPanel {
 		//tiltTo((int) psi);
 		//double ettaForward = etta2 - etta1;
 		errory = tracker.targety - tracker.y;
-		while (Math.abs(errory) > 1 && !this.ESC) {
+		while (Math.abs(errory) > 5 && !this.ESC) {
 			sp.fetchSample(sample,0);
 			if(sample[0] <= distanceThres){
 				break;
@@ -217,7 +220,7 @@ public class PanAndTiltServoing extends JPanel {
 			//pan.rotateTo((int) phi);
 			//double gammaForward = gamma2 - gamma1;
 			double errorx = tracker.targetx - tracker.x;
-			while (Math.abs(errorx) > 1 && !this.ESC) {
+			while (Math.abs(errorx) > 5 && !this.ESC) {
 				sp.fetchSample(sample,0);
 				if(sample[0] <= distanceThres){
 					break;
@@ -253,6 +256,26 @@ public class PanAndTiltServoing extends JPanel {
 		}
 		
 		
+	}
+	
+	public void grab() {
+		try {
+			grabber.rotate(-2200);
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			closePorts();
+		}
+	}
+	
+	public void release() {
+		try {
+			grabber.rotate(2200);
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			closePorts();
+		}
 	}
 	
 	public class MyMouseListener implements MouseListener{
@@ -315,7 +338,7 @@ public class PanAndTiltServoing extends JPanel {
 			errorx = tracker.targetx - tracker.x;
 			errory = tracker.targety - tracker.y;
 			normTrackerError = Math.sqrt(Math.pow(errorx, 2) + Math.pow(errory, 2));
-			if (normTrackerError > 30) {
+			if (normTrackerError > 80) {
 				BluetoothServer.send(Integer.MAX_VALUE);
 				p.zerox();
 				p.zeroy();
@@ -326,6 +349,10 @@ public class PanAndTiltServoing extends JPanel {
 				BluetoothServer.send(Integer.MIN_VALUE);
 			}
 		}
+		BluetoothServer.send(Integer.MAX_VALUE);
+		p.grab();
+		Button.waitForAnyPress();
+		p.release();
 		p.closePorts();
 		BluetoothServer.disconnect();
 	}

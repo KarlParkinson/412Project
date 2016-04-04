@@ -11,14 +11,14 @@ import lejos.utility.Delay;
 public class BluetoothClient {
 
 	public static DataInputStream dataIn;
-	//public static DataOutputStream dataOut;
+	public static DataOutputStream dataOut;
 	public static BTConnection BTLink;
 
 	
 	public static void connect() {
 		  System.out.println("Listening for Tablet");
 		  BTLink = (BTConnection) Bluetooth.getNXTCommConnector().waitForConnection(8000, NXTConnection.RAW);    
-		  //dataOut = BTLink.openDataOutputStream();
+		  dataOut = BTLink.openDataOutputStream();
 		  dataIn = BTLink.openDataInputStream();
 		  System.out.println("Connected");
 	}
@@ -34,31 +34,22 @@ public class BluetoothClient {
 
 	}//End disconnect
 	
-	public static int[] read(){
-		
-		int[] values = {-1,-1,-1,-1};
-		int transmission;
-		
-		while(true){
-			try{
-				transmission = dataIn.readInt();
-				System.out.println("Read int: " + transmission);
-				if(transmission == -1){
-					Delay.msDelay(100);
-					for(int i = 0; i < 4; i++){
-						transmission = dataIn.readInt();
-						values[i] = transmission;
-					}
-					break;
-				}
-			}catch(IOException e){
-				System.out.println("Could not read bt connection");
-			}
+	
+	public static int readCoordinates(int n){
+		int transmission = 0;
+		try{
+			dataOut.writeInt(n);
+			dataOut.flush();
+			transmission = dataIn.readInt();
+			System.out.println(transmission);
+		}catch(IOException e){
+			System.out.println("Could not read bt connection");
 		}
 		
-		return values;
-		
+		return transmission;
 	}
+	
+	
 
 
 }

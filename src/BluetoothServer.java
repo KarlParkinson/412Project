@@ -25,10 +25,10 @@ public class BluetoothServer {
 	public static void connect() {
 		link1 = new BTConnector();
 		//link2 = new BTConnector();
-		BTConnection btc1 = link1.connect("00:16:53:44:9B:36", NXTConnection.RAW);
-		//BTConnection btc2 = link2.connect("00:16:53:44:C1:4A", NXTConnection.RAW);
+		//BTConnection btc1 = link1.connect("00:16:53:44:9B:36", NXTConnection.RAW);
+		BTConnection btc1 = link1.connect("00:16:53:44:C1:4A", NXTConnection.RAW);
+		//outData1 = btc1.openDataOutputStream();
 		outData1 = btc1.openDataOutputStream();
-		//outData2 = btc2.openDataOutputStream();
 		System.out.println("\nEV3s are Connected");   
 	}
 

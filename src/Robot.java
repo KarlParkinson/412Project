@@ -12,7 +12,6 @@ import lejos.utility.Delay;
 
 
 public class Robot{
-	private static boolean foundObject = false;
 	//public static TrackerReader tracker = new TrackerReader();
 	EV3LargeRegulatedMotor pan;
 	EV3LargeRegulatedMotor tilt1;
@@ -62,7 +61,7 @@ public class Robot{
 	}
 	
 	public void setInitialAngles() {
-		tiltTo(-35);
+		tiltTo(-55);
 
 		psi = (tilt1.getTachoCount() + tilt2.getTachoCount()) / 2.0;
 		phi = pan.getTachoCount();
@@ -116,11 +115,11 @@ public class Robot{
 	}
 	
 	public void closePorts(){
-		//tilt1.close();
-		//tilt2.close();
-		//pan.close();
-		//dSensor.close();
-		//grabber.close();
+		tilt1.close();
+		tilt2.close();
+		pan.close();
+		dSensor.close();
+		grabber.close();
 	}
 	
 	public int encode(double count) {
@@ -151,9 +150,8 @@ public class Robot{
 		//double etta2 = Math.toRadians(tiltAngle2) + Math.atan(errory/2.79);
 		//tiltTo((int) psi);
 		//double ettaForward = etta2 - etta1;
-		tracker = BluetoothClient.read();
 		errory = trackerTargetY() - trackerY();
-		while (Math.abs(errory) > 5 && !this.ESC &&checkForObject()) {
+		while (Math.abs(errory) > 5 && !this.ESC) {
 			sp.fetchSample(sample,0);
 			if(sample[0] <= distanceThres){
 				break;
@@ -182,9 +180,8 @@ public class Robot{
 		//double gamma2 = Math.toRadians(panAngle2) + Math.atan(errorx/2.79);
 		//pan.rotateTo((int) phi);
 		//double gammaForward = gamma2 - gamma1;
-		tracker = BluetoothClient.read();
 		double errorx = trackerTargetX() - trackerX();
-		while (Math.abs(errorx) > 5 && !this.ESC && checkForObject()) {
+		while (Math.abs(errorx) > 5 && !this.ESC) {
 			sp.fetchSample(sample,0);
 			if(sample[0] <= distanceThres){
 				break;
@@ -218,32 +215,23 @@ public class Robot{
 	}
 	
 	public int trackerTargetX(){
-		
-		return tracker[2];
+		int coord = BluetoothClient.readCoordinates(3);
+		return coord;
 	}
 	
 	public int trackerTargetY(){
-		
-		return tracker[3];
+		int coord = BluetoothClient.readCoordinates(4);
+		return coord;
 	}
 	
 	public int trackerX(){
-		
-		return tracker[0];
+		int coord = BluetoothClient.readCoordinates(1);
+		return coord;
 	}
 	
 	public int trackerY(){
-		return tracker[1];
-	}
-	
-	public boolean checkForObject(){
-		tracker = BluetoothClient.read();
-		if(tracker[0] == -1 || tracker[1] == -1 || tracker[2] == -1 || tracker[3] == -1){
-			return false;
-		}else{
-			return true;
-		}
-			
+		int coord = BluetoothClient.readCoordinates(2);
+		return coord;
 	}
 	
 	public static void main(String[] args) {
@@ -256,7 +244,6 @@ public class Robot{
 		p.setInitialAngles();
 		System.out.println("Set inital angles, waitin for button press");
 		Button.waitForAnyPress();
-		while(!p.checkForObject()){}
 		p.approxFeedForwardTerms();
 		double errorx = p.trackerTargetX() - p.trackerX();
 		double errory = p.trackerTargetY() - p.trackerY();
@@ -269,10 +256,6 @@ public class Robot{
 			System.out.println("Sensor distance measure " + p.sample[0]);
 			if(p.sample[0] <= p.distanceThres){
 				break;
-			}
-			if(!p.checkForObject()){
-				System.out.println("Could not find object");
-				continue;
 			}
 			errorx = p.trackerTargetX() - p.trackerX();
 			errory = p.trackerTargetY() - p.trackerY();

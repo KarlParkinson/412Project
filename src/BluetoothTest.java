@@ -1,3 +1,7 @@
+<<<<<<< 585dfc2503d349f05f72973be0f4d14d095edfcb
+=======
+
+>>>>>>> communication working, swapped bricks
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -25,11 +29,35 @@ public class BluetoothTest {
 		int count = 0;
 		while(true){
 			try{
+<<<<<<< 585dfc2503d349f05f72973be0f4d14d095edfcb
 				transmission = dataIn.readInt();
 				System.out.println("Read int: " + transmission);
 				if(transmission == -1){
 					Delay.msDelay(500);
 				}
+=======
+				dataOut.writeInt(1);
+				dataOut.flush();
+				transmission = dataIn.readInt();
+				System.out.println(transmission);
+				dataOut.writeInt(2);
+				dataOut.flush();
+				transmission = dataIn.readInt();
+				System.out.println(transmission);
+				dataOut.writeInt(3);
+				dataOut.flush();
+				transmission = dataIn.readInt();
+				System.out.println(transmission);
+				dataOut.writeInt(4);
+				dataOut.flush();
+				transmission = dataIn.readInt();
+				System.out.println(transmission);
+				//Delay.msDelay();
+				System.out.println("Now reading");
+				
+				Delay.msDelay(2000);
+			
+>>>>>>> communication working, swapped bricks
 			}catch(IOException e){
 				System.out.println("Could not read bt connection");
 			}
@@ -44,6 +72,13 @@ public class BluetoothTest {
 	    BTLink = (BTConnection) Bluetooth.getNXTCommConnector().waitForConnection(8000, NXTConnection.RAW);    
 		dataOut = BTLink.openDataOutputStream();
 		dataIn = BTLink.openDataInputStream();
+<<<<<<< 585dfc2503d349f05f72973be0f4d14d095edfcb
 	 }//End connect
 
 }
+=======
+		System.out.println("Connected");
+	 }//End connect
+
+}
+>>>>>>> communication working, swapped bricks

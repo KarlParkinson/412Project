@@ -49,6 +49,27 @@ public class BluetoothClient {
 		return transmission;
 	}
 	
+	public static void sendCommand(int n){
+		try{
+			dataOut.writeInt(n);
+			dataOut.flush();
+		}catch(IOException e){
+			System.out.println("Could not read bt connection");
+		}
+	}
+	
+	public static int readCommand(){
+		int transmission = 0;
+		try{
+			transmission = dataIn.readInt();
+			System.out.println(transmission);
+		}catch(IOException e){
+			System.out.println("Could not read bt connection");
+		}
+		
+		return transmission;
+	}
+	
 	
 
 

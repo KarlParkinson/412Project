@@ -61,7 +61,7 @@ public class Robot{
 	}
 	
 	public void setInitialAngles() {
-		tiltTo(-55);
+		tiltTo(-65);
 
 		psi = (tilt1.getTachoCount() + tilt2.getTachoCount()) / 2.0;
 		phi = pan.getTachoCount();
@@ -86,6 +86,9 @@ public class Robot{
 			double etta2 = Math.toRadians(tiltAngle2) + Math.atan(errory/2.79);
 			tiltTo((int) psi);
 			ettaForward = etta2 - etta1;
+			
+			System.out.println("gammaForward is " + gammaForward);
+			System.out.println("ettaForward is " + ettaForward);
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -191,10 +194,8 @@ public class Robot{
 			if (Math.abs(phiChange) > MAX_ANGLE) {
 				phiChange = MAX_ANGLE * Math.signum(phiChange);
 			}
-			//System.out.println(phiChange);
 			phi += phiChange;
 			pan.rotateTo((int) phi);
-			Delay.msDelay(100);
 			errorx = trackerTargetX() - trackerX();
 			//Delay.msDelay(2000);
 		}
@@ -216,21 +217,25 @@ public class Robot{
 	
 	public int trackerTargetX(){
 		int coord = BluetoothClient.readCoordinates(3);
+		System.out.println("");
 		return coord;
 	}
 	
 	public int trackerTargetY(){
 		int coord = BluetoothClient.readCoordinates(4);
+		System.out.println("");
 		return coord;
 	}
 	
 	public int trackerX(){
 		int coord = BluetoothClient.readCoordinates(1);
+		System.out.println("");
 		return coord;
 	}
 	
 	public int trackerY(){
 		int coord = BluetoothClient.readCoordinates(2);
+		System.out.println("");
 		return coord;
 	}
 	
@@ -250,6 +255,11 @@ public class Robot{
 		double normTrackerError;
 		double angularV;
 		double tachoCount;
+		
+		//p.zerox();
+		//p.zeroy();
+		
+		
 		
 		while (!p.ESC) {
 			p.sp.fetchSample(p.sample,0);
@@ -272,6 +282,7 @@ public class Robot{
 				BluetoothServer.send(Integer.MIN_VALUE);
 			}
 		}
+		
 		BluetoothServer.send(Integer.MAX_VALUE);
 		p.grab();
 		Button.waitForAnyPress();
@@ -279,6 +290,7 @@ public class Robot{
 		p.closePorts();
 		BluetoothServer.disconnect();
 		BluetoothClient.disconnect();
+		
 	}
 
 

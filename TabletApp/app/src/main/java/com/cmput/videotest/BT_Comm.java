@@ -17,6 +17,7 @@ import java.util.UUID;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 
 import android.util.Log;
@@ -67,37 +68,6 @@ public class BT_Comm {
     }
 
 
-    public void writeMessage(byte msg) throws InterruptedException{
-        BluetoothSocket connSock;
-
-        //Swith nxt socket
-        //if(nxt.equals("nxt2")){
-        //    connSock=socket_nxt2;
-        //}else
-        //if(nxt.equals("nxt1")){
-            connSock= socket_ev3_1;
-        //}else{
-        //    connSock=null;
-        //}
-
-        if(connSock!=null){
-            try {
-                OutputStreamWriter out=new OutputStreamWriter(connSock.getOutputStream());
-                out.write(msg);
-                out.flush();
-
-                Thread.sleep(1000);
-
-
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }else{
-            //Error
-        }
-    }
-
 
     public void writeData(int msg) throws InterruptedException{
         BluetoothSocket connSock;
@@ -130,18 +100,10 @@ public class BT_Comm {
         }
     }
 
-    // Note: Not needed for the current program
-    public int readMessage(String nxt){
+    public int readMessage(){
         BluetoothSocket connSock;
         int n;
-        //Swith nxt socket
-        if(nxt.equals("nxt2")){
-            connSock=socket_nxt2;
-        }else if(nxt.equals("nxt1")){
-            connSock= socket_ev3_1;
-        }else{
-            connSock=null;
-        }
+        connSock= socket_ev3_1;
 
         if(connSock!=null){
             try {

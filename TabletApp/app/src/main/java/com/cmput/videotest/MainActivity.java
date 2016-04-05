@@ -1,8 +1,8 @@
 package com.cmput.videotest;
 
+import android.bluetooth.BluetoothSocket;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -12,10 +12,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.api.GoogleApiClient;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -32,9 +30,10 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -45,17 +44,28 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private static final String TAG = "OCVTabletApp::Activity";
-    DownloadImageTask d;
+
+    private DownloadImageTask downloadImageAsyncTask;
+    private ConnectedThread bluetoothThread;
+
     ImageView ipCamera;
     Bitmap mIcon11 = null;
     Button connectIpButton;
     Button connectEV3;
     EditText enterIpText;
+    TextView blobXText;
+    TextView blobYText;
+    TextView centerXText;
+    TextView centerYText;
+
     boolean ipconnected;
     boolean btconnected;
     BT_Comm btComm;
     String macAddress1 = "00:16:53:44:9B:36";
-    int[] goalCoords = {-1, -1};
+    //String macAddress1 = "00:16:53:44:C1:4A";
+    int[] goalCoords = {0, 0};
+    int[] centerCoords = {0,0};
+    int[] blobCoords = {0,0};
 
     private boolean mIsColorSelected = false;
     private Mat mRgba;
@@ -73,12 +83,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         ipCamera = (ImageView) findViewById(R.id.capturedimage);
         connectIpButton = (Button) findViewById(R.id.connectIpCamera);
         connectEV3 = (Button) findViewById(R.id.connectEV3);
+        blobXText = (TextView) findViewById(R.id.blobX);
+        blobXText.setText("");
+        blobYText = (TextView) findViewById(R.id.blobY);
+        blobYText.setText("");
+        centerXText = (TextView) findViewById(R.id.centerX);
+        centerXText.setText("");
+        centerYText = (TextView) findViewById(R.id.centerY);
+        centerYText.setText("");
         enterIpText = (EditText) findViewById(R.id.enterIpAddress);
-        enterIpText.setText("172.28.88.195:8080");
+        enterIpText.setText("172.28.90.37:8080");
         ipconnected = false;
         btconnected = false;
         btComm = new BT_Comm();
-        d = new DownloadImageTask((ImageView) findViewById(R.id.capturedimage));
+        downloadImageAsyncTask = new DownloadImageTask((ImageView) findViewById(R.id.capturedimage));
     }
 
     public void onStart() {
@@ -87,13 +105,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public void onPause() {
         super.onPause();
-        d.cancel(false);
+        btconnected = false;
+        downloadImageAsyncTask.cancel(false);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        d.cancel(false);
+        btconnected = false;
+        downloadImageAsyncTask.cancel(false);
     }
 
     @Override
@@ -108,18 +128,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
      */
     public void clickConnectEV3(View view) {
         if (!btconnected) {
-            Log.d("MainActivity", "Trying to connect to EV3");
+            Log.d("Bluetooth", "Trying to connect to EV3");
 
             if (!btComm.initBT()) {
-                Log.d("MainActivity", "Could not init bluetooth");
+                Log.d("Bluetooth", "Could not init bluetooth");
             } else {
                 boolean connected = btComm.connectToEV3(macAddress1);
                 if (connected) {
-                    Log.d("MainActivity", "Connected to brick");
+                    Log.d("Bluetooth", "Connected to brick");
                     btconnected = true;
-
+                    bluetoothThread = new ConnectedThread(btComm.socket_ev3_1);
+                    bluetoothThread.start();
                 } else {
-                    Log.d("MainActivity", "Did not connect");
+                    Toast.makeText(this,"Could not connect to EV3",Toast.LENGTH_SHORT);
+                    Log.d("Bluetooth", "Did not connect");
                 }
             }
         }
@@ -132,6 +154,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
      */
     public void clickConnectIpCamera(View view) {
         String ip = enterIpText.getText().toString();
+        Log.d("Connect to camera","Trying to connect to: " + "http://" + ip + "/shot.jpg");
 
         if (!ipconnected) {
             //Initialize opencv variables
@@ -140,13 +163,23 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             mBlobColorRgba = new Scalar(255);
             mBlobColorHsv = new Scalar(255);
             SPECTRUM_SIZE = new Size(200, 64);
-            CONTOUR_COLOR = new Scalar(255,0,0,255);
-
-            d.execute("http://" + ip + "/shot.jpg");
+            CONTOUR_COLOR = new Scalar(255, 0, 0, 255);
+            downloadImageAsyncTask.execute("http://" + ip + "/shot.jpg");
             ipconnected = true;
+        }else{
+            Toast.makeText(this,"Could not connect to ip camera",Toast.LENGTH_SHORT);
         }
     }
-
+    public void clickStopEV3(View view) {
+        Log.d("main activity", "Stopping EV3");
+        bluetoothThread.write(5);
+        btconnected =false;
+        try{
+            btComm.socket_ev3_1.close();
+        }catch(IOException e){
+            Log.d("Bluetooth", "Could not close socket");
+        }
+    }
     /**
      * Thread task for pulling images from ipCamera, and applying opencv object detection
      */
@@ -182,6 +215,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if (!mIsColorSelected) {
                 bmImage.setImageBitmap(result[0]);
                 mRgba = new Mat(ipCamera.getHeight(), ipCamera.getWidth(), CvType.CV_8UC4);
+                Imgproc.circle(mRgba, new Point(mRgba.cols() / 2, mRgba.rows() / 2), 20, new Scalar(0, 255, 0), 1);
+                Imgproc.circle(mRgba, new Point(mRgba.cols()/2, mRgba.rows()/2), 2, new Scalar(0, 255, 0), 1);
                 Utils.bitmapToMat(result[0],mRgba);
             } else {
                 //convert bm from ipcamera to opencv Mat
@@ -199,29 +234,34 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 colorLabel.setTo(mBlobColorRgba);
                 Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
 
+
+                centerCoords[0] = mRgba.cols() / 2;
+                centerCoords[1] = mRgba.rows() /2;
                 //if Bluetooth connected then get contour center and send to EV3
-                if(contours.size() > 0 && btconnected){
+                if(contours.size() > 0){
                     MatOfPoint2f cnt =new MatOfPoint2f(contours.get(0).toArray());
                     Point center = new Point();
                     float[] radius = {0};
                     Imgproc.minEnclosingCircle(cnt, center, radius);
-
-                    Log.d("Coords Goal x", String.valueOf((int) Math.round(center.x)));
-                    Log.d("Coords Goal y", String.valueOf((int) Math.round(center.y)));
-
-                    Log.d("Coords mRgba x", String.valueOf(mRgba.cols()/2));
-                    Log.d("Coords mRgba y", String.valueOf(mRgba.rows()/2));
-
-                    sendCoordsToEV3((int)Math.round(center.x),(int)Math.round(center.y));
+                    blobCoords[0] = (int) Math.round(center.x);
+                    blobCoords[1] = (int) Math.round(center.y);
+                }else{
+                    blobCoords[0] = mRgba.cols() / 2;
+                    blobCoords[1] = mRgba.rows() /2;
                 }
+
+                blobXText.setText(" blob X: " + blobCoords[0]);
+                blobYText.setText(" blob Y: " + blobCoords[1]);
+
+                centerXText.setText(" center X: " + (mRgba.cols() / 2));
+                centerYText.setText(" center Y: " + (mRgba.rows() / 2));
+
                 //Draw center target
                 Imgproc.circle(mRgba, new Point(mRgba.cols()/2, mRgba.rows()/2), 20, new Scalar(0, 255, 0), 1);
                 Imgproc.circle(mRgba, new Point(mRgba.cols()/2, mRgba.rows()/2), 2, new Scalar(0, 255, 0), 1);
                 Utils.matToBitmap(mRgba, bm);
                 ipCamera.setImageBitmap(bm);
             }
-
-            Log.d("MainActivity", "Async task on progress update");
         }
 
         protected void onPostExecute(Bitmap result) {
@@ -267,8 +307,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         int x = (int)event.getX() - xOffset;
         int y = (int)event.getY() - yOffset;
-        goalCoords[0] = x;
-        goalCoords[1] = y;
 
         Log.i(TAG, "Touch image coordinates: (" + x + ", " + y + ")");
 
@@ -318,26 +356,87 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return new Scalar(pointMatRgba.get(0, 0));
     }
 
-    /**
-     * Sends image center and goal coodinates to connected device over Bluetooth
-     *
-     * @param goalX
-     * @param goalY
-     */
-    public void sendCoordsToEV3(int goalX, int goalY){
 
-        int[] message = {goalX,goalY,mRgba.cols()/2,mRgba.rows()/2};
-        try {
-            for(int i = 0; i < 4; i++){
-                btComm.writeData(message[i]);
+    /**
+     * Bluetooth connection thread, Handles reading and writing from bluetooth socket
+     * Uses BT_comm class for writing
+     */
+    private class ConnectedThread extends Thread {
+        private final InputStream mmInStream;
+
+        public ConnectedThread(BluetoothSocket socket) {
+            InputStream tmpIn = null;
+
+            try {
+                tmpIn = socket.getInputStream();
+            } catch (IOException e) { }
+
+            mmInStream = tmpIn;
+        }
+
+        public void run() {
+            byte[] buffer = new byte[256];
+            int n;
+            int bytes;
+
+            // Keep looping to listen for received messages
+            while (btconnected) {
+                try {
+                    n = mmInStream.read();
+
+                    /*
+                    Right here write some code
+                    if(n == some number){
+                        enter teleoperation mode
+                        Show left and right buttons
+                        On button clicks send commands to Ev3
+                        When stop button is pressed do normal stuff
+
+                    }
+                     */
+                    if(n > 0) {
+                        Log.d("BT Thread num received ",String.valueOf(n));
+                        write(n);
+                    }
+
+                } catch (IOException e) {
+                    break;
+                }
             }
-            btComm.writeData(-1);
-            Log.d("MainActivity", "Message sent");
-        } catch (InterruptedException e) {
-            //e.printStackTrace();
-            Log.d("MainActivity", "Did not sent byte");
+        }
+        public void write(int n) {
+            try {
+                switch (n) {
+                    case 1:
+                        btComm.writeData(blobCoords[0]);
+                        Log.d("BT Blob X", String.valueOf(blobCoords[0]));
+                        break;
+                    case 2:
+                        btComm.writeData(blobCoords[1]);
+                        Log.d("BT Blob Y", String.valueOf(blobCoords[1]));
+                        break;
+                    case 3:
+                        btComm.writeData(centerCoords[0]);
+                        Log.d("BT center X", String.valueOf(centerCoords[0]));
+                        break;
+                    case 4:
+                        btComm.writeData(centerCoords[1]);
+                        Log.d("BT center Y", String.valueOf(centerCoords[0]));
+                        break;
+                    case 5:
+                        btComm.writeData(-1);
+                        Log.d("BT stop", String.valueOf(-1));
+                        break;
+                }
+            } catch (InterruptedException e) {
+                Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
+                finish();
+
+            }
         }
     }
-
-
 }
+
+
+
+

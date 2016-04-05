@@ -34,7 +34,7 @@ public class Robot{
 	boolean ESC;
 	
 	//private final double k1;
-	private final double k2 = 0.9;
+	private final double k2 = 1.45;
 	
 	double radiansPerTick;
 	
@@ -99,8 +99,6 @@ public class Robot{
 	}
 	
 	public double calcVelocity() {
-		System.out.println("phi is: " + phi);
-		System.out.println("psi is: " + psi);
 		double b = h / Math.tan(Math.toRadians(psi));
 		double normESquared = Math.pow(b, 2) + Math.pow(s, 2) - 2*b*s*Math.cos(Math.toRadians(180 - phi));
 		double alpha = Math.asin((b*Math.sin(Math.toRadians(180 - phi)))/Math.sqrt(normESquared));
@@ -125,34 +123,10 @@ public class Robot{
 		grabber.close();
 	}
 	
-	public int encode(double count) {
-		int tachoCount = (int) Math.round(count);
-		int motor = (tachoCount >= 0) ? 0 : 1;
-		System.out.println((int) ((Math.abs(tachoCount)*10 + motor)*Math.signum(tachoCount)));
-		return (int) ((Math.abs(tachoCount)*10 + motor)*Math.signum(tachoCount));
-	}
-	
-	public void decode(int received) {
-		int motor = received % 10;
-		int tachoCount = (int) ((received - motor*Math.signum(motor)) / 10);
-		System.out.println(tachoCount);
-	}
-	
-	
 	public void zeroy() {
 		double MAX_ANGLE = 3;
 		double errory;
 		double kpsi = 0.01;
-		//int tiltAngle2 = 5;
-
-		//double psi = tilt1.getTachoCount();
-		//double tiltAngle2 = psi + 5;
-		//double etta1 = Math.toRadians(psi) + Math.atan(errory/2.79);
-		//tiltTo((int) tiltAngle2);
-		//errory = tracker.targety - tracker.y;
-		//double etta2 = Math.toRadians(tiltAngle2) + Math.atan(errory/2.79);
-		//tiltTo((int) psi);
-		//double ettaForward = etta2 - etta1;
 		errory = trackerTargetY() - trackerY();
 		while (Math.abs(errory) > 5 && !this.ESC) {
 			sp.fetchSample(sample,0);
@@ -163,12 +137,9 @@ public class Robot{
 			if (Math.abs(psiChange) > MAX_ANGLE) {
 				psiChange = MAX_ANGLE * Math.signum(psiChange);
 			}
-			//System.out.println(psiChange);
 			psi += psiChange;
 			tiltTo((int) psi);
-			//Delay.msDelay(2000);
 			errory = trackerTargetY() - trackerY();
-			//Delay.msDelay(500); 
 		}
 	}
 	
@@ -176,28 +147,19 @@ public class Robot{
 	public void zerox() {
 		double MAX_ANGLE = 3;
 		double kphi = 0.1;
-		//double phi = pan.getTachoCount();
-		//double gamma1 = Math.toRadians(phi) + Math.atan(errorx/2.79);
-		//pan.rotateTo(panAngle2);
-		//errorx = tracker.targetx - tracker.x;
-		//double gamma2 = Math.toRadians(panAngle2) + Math.atan(errorx/2.79);
-		//pan.rotateTo((int) phi);
-		//double gammaForward = gamma2 - gamma1;
 		double errorx = trackerTargetX() - trackerX();
 		while (Math.abs(errorx) > 5 && !this.ESC) {
 			sp.fetchSample(sample,0);
 			if(sample[0] <= distanceThres){
 				break;
 			}
-			//phi += (gammaForward - kphi*errorx) % 360;
 			double phiChange = -1*(gammaForward - kphi*errorx) % 360;
 			if (Math.abs(phiChange) > MAX_ANGLE) {
 				phiChange = MAX_ANGLE * Math.signum(phiChange);
 			}
 			phi += phiChange;
-			pan.rotateTo((int) phi);
+			panTo((int) phi);
 			errorx = trackerTargetX() - trackerX();
-			//Delay.msDelay(2000);
 		}
 		
 	}
@@ -239,6 +201,70 @@ public class Robot{
 		return coord;
 	}
 	
+	public void panTo(int degree){
+		pan.rotateTo(degree);
+	}
+	
+	public void target() {
+		BluetoothClient.sendCommand(6);
+		boolean done = false;
+		while(!done){
+			int command = BluetoothClient.readCommand();
+			switch(command) {
+			
+			case(-1):
+				phi -= 3;
+				panTo((int)phi);
+				break;
+			case(1):
+				phi += 3;
+				panTo((int) phi);
+				break;
+			case(-2):
+				psi -= 3;
+				tiltTo((int) psi);
+				break;
+			case(2):
+				psi += 3;
+				tiltTo((int) psi);
+				break;
+			default:
+				done = true;
+				break;
+			}
+		}
+	}
+	
+	public void drive() {
+		double errorx = trackerTargetX() - trackerX();
+		double errory = trackerTargetY() - trackerY();
+		double normTrackerError;
+		double angularV;
+		double tachoCount;
+		
+		while (!ESC) {
+			sp.fetchSample(sample,0);
+			System.out.println("Sensor distance measure " + sample[0]);
+			if(sample[0] <= distanceThres){
+				break;
+			}
+			errorx = trackerTargetX() - trackerX();
+			errory = trackerTargetY() - trackerY();
+	
+			normTrackerError = Math.sqrt(Math.pow(errorx, 2) + Math.pow(errory, 2));
+			if (normTrackerError > 60) {
+				BluetoothServer.send(Integer.MAX_VALUE);
+				zerox();
+				zeroy();
+				angularV = calcVelocity();
+				tachoCount = calcTachoCount(angularV);
+				BluetoothServer.send((int) Math.round(tachoCount));
+			} else {
+				BluetoothServer.send(Integer.MIN_VALUE);
+			}
+		}
+	}
+	
 	public static void main(String[] args) {
 		//tracker.start();
 		
@@ -247,20 +273,20 @@ public class Robot{
 		System.out.println("Done connecting to Tablet");
 		Robot p = new Robot();
 		p.setInitialAngles();
-		System.out.println("Set inital angles, waitin for button press");
-		Button.waitForAnyPress();
-		p.approxFeedForwardTerms();
-		double errorx = p.trackerTargetX() - p.trackerX();
-		double errory = p.trackerTargetY() - p.trackerY();
-		double normTrackerError;
-		double angularV;
-		double tachoCount;
+		//double errorx = p.trackerTargetX() - p.trackerX();
+		//double errory = p.trackerTargetY() - p.trackerY();
+		//double normTrackerError;
+		//double angularV;
+		//double tachoCount;
 		
 		//p.zerox();
 		//p.zeroy();
 		
+		p.target();
+		p.approxFeedForwardTerms();
+		p.drive();
 		
-		
+		/*
 		while (!p.ESC) {
 			p.sp.fetchSample(p.sample,0);
 			System.out.println("Sensor distance measure " + p.sample[0]);
@@ -271,7 +297,7 @@ public class Robot{
 			errory = p.trackerTargetY() - p.trackerY();
 	
 			normTrackerError = Math.sqrt(Math.pow(errorx, 2) + Math.pow(errory, 2));
-			if (normTrackerError > 80) {
+			if (normTrackerError > 60) {
 				BluetoothServer.send(Integer.MAX_VALUE);
 				p.zerox();
 				p.zeroy();
@@ -282,10 +308,15 @@ public class Robot{
 				BluetoothServer.send(Integer.MIN_VALUE);
 			}
 		}
+		*/
 		
 		BluetoothServer.send(Integer.MAX_VALUE);
 		p.grab();
-		Button.waitForAnyPress();
+		p.target();
+		p.approxFeedForwardTerms();
+		//Button.waitForAnyPress();
+		p.drive();
+		BluetoothServer.send(Integer.MAX_VALUE);
 		p.release();
 		p.closePorts();
 		BluetoothServer.disconnect();

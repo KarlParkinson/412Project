@@ -6,6 +6,7 @@ import lejos.remote.ev3.RMIRegulatedMotor;
 import lejos.remote.ev3.RMISampleProvider;
 import lejos.remote.ev3.RemoteEV3;
 import lejos.robotics.SampleProvider;
+import lejos.utility.Delay;
 import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3GyroSensor;
 
@@ -101,7 +102,8 @@ public class Vehicle {
 	
 	public static void main(String[] args) {
 		Vehicle v = new Vehicle();
-		v.turnRight(25);
+		Delay.msDelay(3000);
+		v.turnLeft(25);
 		v.closePorts();
 	}
 

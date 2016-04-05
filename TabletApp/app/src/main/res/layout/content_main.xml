@@ -49,7 +49,7 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Stop Robot"
+            android:text="Reset Bluetooth"
             android:id="@+id/stopEV3"
             android:layout_alignBottom="@+id/connectIpCamera"
             android:layout_alignParentLeft="true"
@@ -93,19 +93,49 @@
             android:layout_height="match_parent" />
 
         <Button
-            android:id="@+id/buttonLeft"
+            android:id="@+id/panLeft"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Left"
             android:layout_alignParentBottom="true"
+            android:onClick="panLeftClick"
             android:layout_alignParentLeft="true" />
 
         <Button
-            android:id="@+id/buttonRight"
+            android:id="@+id/panRight"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Right"
             android:layout_alignParentBottom="true"
+            android:onClick="panRightClick"
+            android:layout_alignParentRight="true"/>
+
+
+
+        <Button
+            android:id="@+id/tiltDown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Down"
+            android:layout_above="@id/panLeft"
+            android:onClick="tiltDownClick"
+            android:layout_alignParentRight="true"/>
+        <Button
+            android:id="@+id/tiltUp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Up"
+            android:layout_above="@id/panRight"
+            android:onClick="tiltUpClick"
+            android:layout_alignParentLeft="true"/>
+
+        <Button
+            android:id="@+id/panStop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Drive"
+            android:layout_above="@id/tiltUp"
+            android:onClick="panStopClick"
             android:layout_alignParentRight="true"/>
     </RelativeLayout>
 

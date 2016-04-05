@@ -52,6 +52,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Bitmap mIcon11 = null;
     Button connectIpButton;
     Button connectEV3;
+    Button panLeft;
+    Button panRight;
+    Button panStop;
     EditText enterIpText;
     TextView blobXText;
     TextView blobYText;
@@ -60,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     boolean ipconnected;
     boolean btconnected;
+    boolean panTeleop;
     BT_Comm btComm;
     String macAddress1 = "00:16:53:44:9B:36";
     //String macAddress1 = "00:16:53:44:C1:4A";
@@ -93,6 +97,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         centerYText.setText("");
         enterIpText = (EditText) findViewById(R.id.enterIpAddress);
         enterIpText.setText("172.28.90.37:8080");
+        panRight = (Button) findViewById(R.id.panRight);
+        panLeft = (Button) findViewById(R.id.panLeft);
+        panStop = (Button) findViewById(R.id.panStop);
+        //panRight.setVisibility(View.GONE);
+        //panLeft.setVisibility(View.GONE);
+        //panStop.setVisibility(View.GONE);
         ipconnected = false;
         btconnected = false;
         btComm = new BT_Comm();
@@ -154,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
      */
     public void clickConnectIpCamera(View view) {
         String ip = enterIpText.getText().toString();
-        Log.d("Connect to camera","Trying to connect to: " + "http://" + ip + "/shot.jpg");
+        Log.d("Connect to camera", "Trying to connect to: " + "http://" + ip + "/shot.jpg");
 
         if (!ipconnected) {
             //Initialize opencv variables
@@ -172,12 +182,66 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
     public void clickStopEV3(View view) {
         Log.d("main activity", "Stopping EV3");
-        bluetoothThread.write(5);
-        btconnected =false;
-        try{
-            btComm.socket_ev3_1.close();
-        }catch(IOException e){
-            Log.d("Bluetooth", "Could not close socket");
+        //bluetoothThread.handleCommand(5);
+
+        if(btComm.socket_ev3_1.isConnected()) {
+            try {
+                btconnected = false;
+                btComm.socket_ev3_1.close();
+            } catch (IOException e) {
+                Log.d("Bluetooth", "Could not close socket");
+            }
+        }
+    }
+
+    public void panLeftClick(View view){
+        if(panTeleop) {
+            try {
+                btComm.writeData(1);
+            } catch (InterruptedException e) {
+
+            }
+        }
+    }
+
+    public void panRightClick(View view){
+        if(panTeleop) {
+            try {
+                btComm.writeData(-1);
+            } catch (InterruptedException e) {
+
+            }
+        }
+    }
+
+    public void tiltDownClick(View view){
+        if(panTeleop) {
+            try {
+                btComm.writeData(-2);
+            } catch (InterruptedException e) {
+
+            }
+        }
+    }
+
+    public void tiltUpClick(View view){
+        if(panTeleop) {
+            try {
+                btComm.writeData(2);
+            } catch (InterruptedException e) {
+
+            }
+        }
+    }
+
+    public void panStopClick(View view){
+        if(panTeleop) {
+            try {
+                btComm.writeData(0);
+                panTeleop = false;
+            } catch (InterruptedException e) {
+
+            }
         }
     }
     /**
@@ -383,20 +447,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             while (btconnected) {
                 try {
                     n = mmInStream.read();
-
-                    /*
-                    Right here write some code
-                    if(n == some number){
-                        enter teleoperation mode
-                        Show left and right buttons
-                        On button clicks send commands to Ev3
-                        When stop button is pressed do normal stuff
-
-                    }
-                     */
                     if(n > 0) {
                         Log.d("BT Thread num received ",String.valueOf(n));
-                        write(n);
+                        handleCommand(n);
                     }
 
                 } catch (IOException e) {
@@ -404,7 +457,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
             }
         }
-        public void write(int n) {
+        public void handleCommand(int n) {
             try {
                 switch (n) {
                     case 1:
@@ -424,8 +477,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         Log.d("BT center Y", String.valueOf(centerCoords[0]));
                         break;
                     case 5:
-                        btComm.writeData(-1);
+                        //btComm.writeData(-1);
                         Log.d("BT stop", String.valueOf(-1));
+                        break;
+                    case 6:
+                        panTeleop = true;
+                        //panRight.setVisibility(View.VISIBLE);
+                        //panLeft.setVisibility(View.VISIBLE);
+                        //panStop.setVisibility(View.VISIBLE);
+                        break;
+                    case 7:
+                        //panTeleop = false;
+                        //panRight.setVisibility(View.GONE);
+                        //panLeft.setVisibility(View.GONE);
+                        //panStop.setVisibility(View.GONE);
                         break;
                 }
             } catch (InterruptedException e) {

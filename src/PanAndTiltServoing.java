@@ -234,7 +234,6 @@ public class PanAndTiltServoing extends JPanel {
 				//System.out.println(phiChange);
 				phi += phiChange;
 				pan.rotateTo((int) phi);
-				Delay.msDelay(100);
 				errorx = tracker.targetx - tracker.x;
 				//Delay.msDelay(2000);
 			}

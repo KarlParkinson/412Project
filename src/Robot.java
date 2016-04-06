@@ -273,48 +273,15 @@ public class Robot{
 		System.out.println("Done connecting to Tablet");
 		Robot p = new Robot();
 		p.setInitialAngles();
-		//double errorx = p.trackerTargetX() - p.trackerX();
-		//double errory = p.trackerTargetY() - p.trackerY();
-		//double normTrackerError;
-		//double angularV;
-		//double tachoCount;
-		
-		//p.zerox();
-		//p.zeroy();
 		
 		p.target();
 		p.approxFeedForwardTerms();
 		p.drive();
 		
-		/*
-		while (!p.ESC) {
-			p.sp.fetchSample(p.sample,0);
-			System.out.println("Sensor distance measure " + p.sample[0]);
-			if(p.sample[0] <= p.distanceThres){
-				break;
-			}
-			errorx = p.trackerTargetX() - p.trackerX();
-			errory = p.trackerTargetY() - p.trackerY();
-	
-			normTrackerError = Math.sqrt(Math.pow(errorx, 2) + Math.pow(errory, 2));
-			if (normTrackerError > 60) {
-				BluetoothServer.send(Integer.MAX_VALUE);
-				p.zerox();
-				p.zeroy();
-				angularV = p.calcVelocity();
-				tachoCount = p.calcTachoCount(angularV);
-				BluetoothServer.send((int) Math.round(tachoCount));
-			} else {
-				BluetoothServer.send(Integer.MIN_VALUE);
-			}
-		}
-		*/
-		
 		BluetoothServer.send(Integer.MAX_VALUE);
 		p.grab();
 		p.target();
 		p.approxFeedForwardTerms();
-		//Button.waitForAnyPress();
 		p.drive();
 		BluetoothServer.send(Integer.MAX_VALUE);
 		p.release();

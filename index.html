@@ -20,29 +20,39 @@
 
     <section class="main-content">
       <h3>
-<a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+<a id="touch-screen-enabled-autonomous-robotic-vehicle" class="anchor" href="#touch-screen-enabled-autonomous-robotic-vehicle" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Touch Screen Enabled Autonomous Robotic Vehicle.</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here <a href="https://guides.github.com/features/mastering-markdown/">using GitHub Flavored Markdown</a>, select a template crafted by a designer, and publish. After your page is generated, you can check out the new <code>gh-pages</code> branch locally. If you’re using GitHub Desktop, simply sync your repository and you’ll see the new branch.</p>
+<p>The goal of this project was to create a differential drive robot that could be given task goals using an intuitive touchscreen interface and then complete the tasks autonomously using visual servoing. To complete this goal we designed a robot using Lego’s EV3 bricks and created a touchscreen interface using a Android tablet. Visual servoing was accomplished using a Android phone as the camera, given 2DOF with pan and tilt motors. Additionally OpenCV for Android was used on the tablet for object detection. Furthermore Bluetooth was used for sending messages between the tablet and EV3. Finally we designed the robot to be able to go and grab a user selected ball and then take the ball to a user selected target and drop it.</p>
 
-<h3>
-<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Designer Templates</h3>
-
-<p>We’ve crafted some handsome templates for you to use. Go ahead and click 'Continue to layouts' to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved.</p>
+<p><img src="https://github.com/KarlParkinson/412Project/blob/master/robot1.jpg" alt=""></p>
 
 <h3>
-<a id="creating-pages-manually" class="anchor" href="#creating-pages-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating pages manually</h3>
+<a id="design" class="anchor" href="#design" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Design</h3>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>Our robot was created using the LEGO Mindstorms EV3 kit. It is a differential drive robot. The pan and tilt rig holding the camera has 2DOF and is able to move independently of the rest of the robot. The claw at the front is used for grasping objects, and the ultrasonic distance sensor is used to stop the robot when it reaches an object.</p>
+
+<h3>
+<a id="control" class="anchor" href="#control" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Control</h3>
+
+<p>Task specification is done by a human operator through an Android touchscreen. The robot and the Android device then communicate over Bluetooth. OpenCV runs on the Android device to enable object tracking and visual servoing.</p>
+
+<p><img src="https://github.com/KarlParkinson/412Project/blob/master/robot4.png" alt=""></p>
+
+<p>The robot is able to autonomously control its own kinematics using visual servoing and simple geometry, as described in the accompanying report. The pan and tilt angles are adjusted to keep the object being tracked in the center of the image plane of the on-board camera. Using the pan and tilt angles, the angular velocity of the robot can be adjusted in order to intercept the target being tracked.</p>
+
+<p><a href="https://github.com/KarlParkinson/412Project/blob/master/robot3.png">https://github.com/KarlParkinson/412Project/blob/master/robot3.png</a></p>
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors and Contributors</h3>
 
-<p>You can <a href="https://help.github.com/articles/basic-writing-and-formatting-syntax/#mentioning-users-and-teams" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor’s GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>This project was created by Karl Parkinson (<a href="https://github.com/KarlParkinson" class="user-mention">@KarlParkinson</a>) and Sean Scheideman (<a href="https://github.com/scheidemanS" class="user-mention">@scheidemanS</a>) for the winter 2016 CMPUT 412: Experimental Mobile Robotics class at the University of Alberta.</p>
 
 <h3>
-<a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Support or Contact</h3>
+<a id="references" class="anchor" href="#references" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>References</h3>
 
-<p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
+<p><a href="https://docs.google.com/document/d/14CSM05k-NNxKoMlzEd3SqhR6CNkV-cLqUes958Fc4g0">Report</a>
+<a href="https://www.youtube.com/watch?v=oL15GbbHTNk">Video Demo</a>
+<a href="http://www.dis.uniroma1.it/%7Elabrob/pub/papers/IROS05_Visual.pdf">http://www.dis.uniroma1.it/~labrob/pub/papers/IROS05_Visual.pdf</a></p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/KarlParkinson/412Project">412project</a> is maintained by <a href="https://github.com/KarlParkinson">KarlParkinson</a>.</span>
